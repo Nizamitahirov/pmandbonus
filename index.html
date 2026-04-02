@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============= RESET & VARS ============= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0f1a;
+  --bg2:#111827;
+  --bg3:#1a2235;
+  --card:#141c2e;
+  --border:#1e2d45;
+  --accent:#3b82f6;
+  --accent2:#6366f1;
+  --accent3:#10b981;
+  --warn:#f59e0b;
+  --danger:#ef4444;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --text3:#475569;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+html{font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+
+/* ============= SCROLLBAR ============= */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ============= LAYOUT ============= */
+.app{display:flex;min-height:100vh}
+
+/* ============= SIDEBAR ============= */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:.3s}
+.sidebar-logo{padding:24px 20px;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-.02em}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-logo p{font-size:.7rem;color:var(--text3);margin-top:4px}
+.sidebar-nav{flex:1;padding:16px 8px;overflow-y:auto}
+.nav-group-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:12px 12px 6px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:.15s;color:var(--text2);font-size:.85rem;font-weight:500;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(99,102,241,.2));color:var(--accent);border-left:2px solid var(--accent)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+
+/* ============= MAIN ============= */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column}
+.topbar{height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.api-status{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--text2)}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--accent3)}
+.api-dot.error{background:var(--danger)}
+.content{padding:24px;flex:1}
+
+/* ============= PAGE ============= */
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-header h2{font-family:var(--font-head);font-size:1.4rem;font-weight:700;color:var(--text)}
+.page-header p{color:var(--text2);font-size:.85rem;margin-top:4px}
+
+/* ============= CARDS ============= */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card-title{font-family:var(--font-head);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title svg{color:var(--accent)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+
+/* ============= STAT CARDS ============= */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+.stat-card.green::before{background:var(--accent3)}
+.stat-card.warn::before{background:var(--warn)}
+.stat-card.purple::before{background:var(--accent2)}
+.stat-label{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.stat-value{font-family:var(--font-head);font-size:1.8rem;font-weight:800;color:var(--text);margin:4px 0 2px}
+.stat-sub{font-size:.75rem;color:var(--text3)}
+
+/* ============= FORMS ============= */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:.88rem;transition:.15s;outline:none}
+.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-control::placeholder{color:var(--text3)}
+select.form-control option{background:var(--bg2)}
+textarea.form-control{resize:vertical;min-height:80px}
+
+/* ============= BUTTONS ============= */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s;border:none;outline:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+.btn-success{background:var(--accent3);color:#fff}
+.btn-success:hover{background:#059669}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:.78rem}
+.btn-icon{padding:7px;border-radius:6px}
+
+/* ============= TABLES ============= */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+thead tr{background:var(--bg3)}
+thead th{padding:11px 14px;text-align:left;color:var(--text2);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;white-space:nowrap}
+tbody tr{border-top:1px solid var(--border);transition:.1s}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+tbody td{padding:10px 14px;color:var(--text);vertical-align:middle}
+
+/* ============= BADGES ============= */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.badge-blue{background:rgba(59,130,246,.15);color:#60a5fa}
+.badge-green{background:rgba(16,185,129,.15);color:#34d399}
+.badge-warn{background:rgba(245,158,11,.15);color:#fbbf24}
+.badge-red{background:rgba(239,68,68,.15);color:#f87171}
+.badge-purple{background:rgba(99,102,241,.15);color:#a5b4fc}
+
+/* ============= PROGRESS ============= */
+.progress{background:var(--bg3);border-radius:20px;height:6px;overflow:hidden}
+.progress-bar{height:100%;border-radius:20px;background:var(--accent);transition:width .5s ease}
+.progress-bar.green{background:var(--accent3)}
+.progress-bar.warn{background:var(--warn)}
+
+/* ============= RATING ============= */
+.rating-stars{display:flex;gap:4px}
+.star{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;font-size:.9rem;color:var(--text3)}
+.star:hover,.star.active{background:rgba(245,158,11,.2);border-color:var(--warn);color:var(--warn)}
+.star.active{background:rgba(245,158,11,.25)}
+
+/* ============= TABS ============= */
+.tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:4px;margin-bottom:20px;width:fit-content}
+.tab{padding:7px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:.84rem;font-weight:600;color:var(--text2);transition:.15s;border:none;background:none;font-family:var(--font-body)}
+.tab.active{background:var(--card);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* ============= ALERTS ============= */
+.alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:.84rem;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.alert-success{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.alert-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa}
+
+/* ============= DIVIDER ============= */
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* ============= RESULT BOX ============= */
+.result-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.result-label{font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.result-value{font-family:var(--font-head);font-size:1.5rem;font-weight:800;color:var(--accent)}
+.result-value.green{color:var(--accent3)}
+.result-value.warn{color:var(--warn)}
+
+/* ============= EMPLOYEE CARD ============= */
+.emp-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:16px}
+.emp-avatar{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:1rem;color:#fff;flex-shrink:0}
+.emp-info h3{font-family:var(--font-head);font-size:.95rem;font-weight:700}
+.emp-info p{font-size:.78rem;color:var(--text2);margin-top:2px}
+.emp-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+
+/* ============= TOAST ============= */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:.84rem;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;min-width:280px;animation:slideIn .3s ease}
+.toast.success{border-left:3px solid var(--accent3)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.info{border-left:3px solid var(--accent)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ============= LOADING ============= */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text3);gap:10px;font-size:.85rem}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============= MODAL ============= */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:.2s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-family:var(--font-head);font-size:1.1rem;font-weight:700}
+
+/* ============= TARGET ROW ============= */
+.target-row{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;position:relative}
+.target-row .remove-btn{position:absolute;top:10px;right:10px}
+.target-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ============= BONUS SECTION ============= */
+.bonus-source{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.bonus-source-title{font-family:var(--font-head);font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* ============= EMPTY STATE ============= */
+.empty-state{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-state svg{width:48px;height:48px;margin:0 auto 12px;opacity:.4;display:block}
+.empty-state p{font-size:.88rem}
+
+/* ============= RESPONSIVE ============= */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Perf<span>MS</span></h1>
+      <p>Performance Management</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">Dashboard</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        İcmal
+      </button>
+
+      <div class="nav-group-title">Konfiqurasiya</div>
+      <button class="nav-item" onclick="showPage('company-targets')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Şirkət Hədəfləri
+      </button>
+      <button class="nav-item" onclick="showPage('dep-targets')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Dep. Hədəfləri
+      </button>
+      <button class="nav-item" onclick="showPage('competencies')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Kompetensiyalar
+      </button>
+      <button class="nav-item" onclick="showPage('position-weights')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+        Çəki Parametrləri
+      </button>
+      <button class="nav-item" onclick="showPage('company-target-weights')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Şirkət Hədəf Çəkiləri
+      </button>
+
+      <div class="nav-group-title">Performans</div>
+      <button class="nav-item" onclick="showPage('performance-cycle')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Performans Sikli
+      </button>
+      <button class="nav-item" onclick="showPage('bonus')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Bonus Hesablaması
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbar-title">İcmal</span>
+      <div class="topbar-right">
+        <div class="api-status">
+          <div class="api-dot" id="api-dot"></div>
+          <span id="api-status-text">Qoşulur...</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <h2>İcmal Panel</h2>
+          <p>Sistemin ümumi vəziyyəti</p>
+        </div>
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="stat-card"><div class="stat-label">İşçi sayı</div><div class="stat-value" id="dash-emp-count">—</div><div class="stat-sub">Aktiv işçilər</div></div>
+          <div class="stat-card green"><div class="stat-label">Şirkət Hədəfləri</div><div class="stat-value" id="dash-ct-count">—</div><div class="stat-sub">Set edilmiş</div></div>
+          <div class="stat-card warn"><div class="stat-label">Aktiv Siklər</div><div class="stat-value" id="dash-cycle-count">—</div><div class="stat-sub">Performance siklləri</div></div>
+          <div class="stat-card purple"><div class="stat-label">Şirkət Nəticəsi</div><div class="stat-value" id="dash-company-result">—</div><div class="stat-sub">Ümumi performans</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/></svg>
+              Şirkət Hədəfləri
+            </div>
+            <div id="dash-company-targets-list"><div class="loading"><div class="spinner"></div>Yüklənir...</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Son Siklər
+            </div>
+            <div id="dash-cycles-list"><div class="loading"><div class="spinner"></div>Yüklənir...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== COMPANY TARGETS ===== -->
+      <div id="page-company-targets" class="page">
+        <div class="page-header">
+          <h2>Şirkət Hədəfləri</h2>
+          <p>Şirkətin ümumi hədəflərini təyin edin</p>
+        </div>
+        <div class="card">
+          <div id="company-targets-container"></div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-outline btn-sm" onclick="addCompanyTarget()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Hədəf Əlavə Et
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveCompanyTargets()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Yadda Saxla
+            </button>
+          </div>
+        </div>
+        <div style="margin-top:16px" id="company-overall-result"></div>
+      </div>
+
+      <!-- ===== DEP TARGETS ===== -->
+      <div id="page-dep-targets" class="page">
+        <div class="page-header">
+          <h2>Departament Hədəfləri</h2>
+          <p>Hər departament üzrə ayrı hədəflər</p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Departament Seçin</label>
+            <select class="form-control" id="dep-target-dept" onchange="loadDepTargets()" style="max-width:300px">
+              <option value="">— Departament seçin —</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" id="dep-targets-card" style="display:none">
+          <div id="dep-targets-container"></div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-outline btn-sm" onclick="addDepTarget()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Hədəf Əlavə Et
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveDepTargets()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>
+              Yadda Saxla
+            </button>
+          </div>
+        </div>
+        <div id="dep-overall-result" style="margin-top:16px"></div>
+      </div>
+
+      <!-- ===== COMPETENCIES ===== -->
+      <div id="page-competencies" class="page">
+        <div class="page-header">
+          <h2>Kompetensiyalar</h2>
+          <p>Vəzifə qruplarına görə kompetensiyalar</p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Vəzifə Qrupu Seçin</label>
+            <select class="form-control" id="comp-pos-group" onchange="loadCompetencies()" style="max-width:300px">
+              <option value="">— Vəzifə qrupu seçin —</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" id="comp-card" style="display:none">
+          <div id="comp-container"></div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-outline btn-sm" onclick="addCompetency()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Kompetensiya Əlavə Et
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveCompetencies()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>
+              Yadda Saxla
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== POSITION WEIGHTS ===== -->
+      <div id="page-position-weights" class="page">
+        <div class="page-header">
+          <h2>Çəki Parametrləri</h2>
+          <p>Vəzifə qrupları üzrə fərdi hədəf və kompetensiya çəkiləri</p>
+        </div>
+        <div class="card">
+          <div id="pos-weights-container"><div class="loading"><div class="spinner"></div>Yüklənir...</div></div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary btn-sm" onclick="savePositionWeights()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>
+              Yadda Saxla
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== COMPANY TARGET WEIGHTS ===== -->
+      <div id="page-company-target-weights" class="page">
+        <div class="page-header">
+          <h2>Şirkət Hədəf Çəkiləri</h2>
+          <p>Hər şirkət hədəfinin vəzifə qruplarına təsir faizi</p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Vəzifə Qrupu Seçin</label>
+            <select class="form-control" id="ctw-pos-group" onchange="loadCompanyTargetWeights()" style="max-width:300px">
+              <option value="">— Vəzifə qrupu seçin —</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" id="ctw-card" style="display:none">
+          <div id="ctw-container"></div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary btn-sm" onclick="saveCompanyTargetWeights()">Yadda Saxla</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PERFORMANCE CYCLE ===== -->
+      <div id="page-performance-cycle" class="page">
+        <div class="page-header">
+          <h2>Performans Sikli</h2>
+          <p>İşçi seçib performans dəyərləndirməsi başlayın</p>
+        </div>
+
+        <!-- Step tabs -->
+        <div class="tabs" id="cycle-tabs">
+          <button class="tab active" onclick="showCycleStep(0)">1. İşçi</button>
+          <button class="tab" onclick="showCycleStep(1)">2. Hədəflər</button>
+          <button class="tab" onclick="showCycleStep(2)">3. Kompetensiyalar</button>
+          <button class="tab" onclick="showCycleStep(3)">4. Nəticə</button>
+        </div>
+
+        <!-- Step 0: Employee Select -->
+        <div id="cycle-step-0">
+          <div class="card">
+            <div class="card-title">İşçi Seçimi</div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Badge / Tabel Nömrəsi</label>
+                <div style="display:flex;gap:8px">
+                  <input class="form-control" id="cycle-badge-input" placeholder="Badge daxil edin" type="text">
+                  <button class="btn btn-primary" onclick="loadCycleEmployee()">Axtar</button>
+                </div>
+              </div>
+            </div>
+            <div id="cycle-emp-info" style="margin-top:16px"></div>
+            <div id="cycle-dep-targets-preview" style="margin-top:16px"></div>
+            <div style="margin-top:16px" id="cycle-start-btn-wrap" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- Step 1: Goals -->
+        <div id="cycle-step-1" style="display:none">
+          <div class="card">
+            <div class="card-title">Goal Setting</div>
+            <div id="goals-container"></div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button class="btn btn-outline btn-sm" onclick="addGoal()">+ Goal Əlavə Et</button>
+              <button class="btn btn-primary btn-sm" onclick="saveGoals()">Yadda Saxla</button>
+            </div>
+            <hr class="divider">
+            <div id="goals-overall" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- Step 2: Competencies -->
+        <div id="cycle-step-2" style="display:none">
+          <div class="card">
+            <div class="card-title">Kompetensiyalar Dəyərləndirməsi</div>
+            <div id="comp-eval-container"></div>
+            <div style="margin-top:16px">
+              <button class="btn btn-primary btn-sm" onclick="saveCompEvals()">Yadda Saxla</button>
+            </div>
+            <hr class="divider">
+            <div id="comp-eval-overall"></div>
+          </div>
+        </div>
+
+        <!-- Step 3: Overall Result -->
+        <div id="cycle-step-3" style="display:none">
+          <div class="card">
+            <div class="card-title">Ümumi Performans Nəticəsi</div>
+            <div id="overall-result-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== BONUS ===== -->
+      <div id="page-bonus" class="page">
+        <div class="page-header">
+          <h2>Bonus Hesablaması</h2>
+          <p>İşçi üzrə bonus məbləğini hesablayın</p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="grid-2">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Badge</label>
+              <div style="display:flex;gap:8px">
+                <input class="form-control" id="bonus-badge-input" placeholder="Badge daxil edin">
+                <button class="btn btn-primary" onclick="loadBonusEmployee()">Axtar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="bonus-container"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwXx1EBV-WtSK8YDfSraPq5-TXbtxsOjM_C6mr3t6poR1RuzkENvnpiZyeMClh6GMlW/exec'; // <-- buraya URL-i daxil et
+
+// ============================================================
+// API
+// ============================================================
+async function api(action, params = {}) {
+  try {
+    const url = new URL(API_URL);
+    url.searchParams.set('action', action);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    const resp = await fetch(url.toString());
+    const data = await resp.json();
+    return data;
+  } catch (e) {
+    console.error(e);
+    return { success: false, error: e.toString() };
+  }
+}
+
+async function apiPost(action, body = {}) {
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...body })
+    });
+    const data = await resp.json();
+    return data;
+  } catch (e) {
+    console.error(e);
+    return { success: false, error: e.toString() };
+  }
+}
+
+// Check API connection
+async function checkApiStatus() {
+  try {
+    const r = await api('getEmployees');
+    document.getElementById('api-dot').className = 'api-dot' + (r.success ? '' : ' error');
+    document.getElementById('api-status-text').textContent = r.success ? 'Bağlantı aktiv' : 'Xəta';
+  } catch {
+    document.getElementById('api-dot').className = 'api-dot error';
+    document.getElementById('api-status-text').textContent = 'Bağlanmır';
+  }
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const pageTitles = {
+  'dashboard': 'İcmal',
+  'company-targets': 'Şirkət Hədəfləri',
+  'dep-targets': 'Departament Hədəfləri',
+  'competencies': 'Kompetensiyalar',
+  'position-weights': 'Çəki Parametrləri',
+  'company-target-weights': 'Şirkət Hədəf Çəkiləri',
+  'performance-cycle': 'Performans Sikli',
+  'bonus': 'Bonus Hesablaması'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageTitles[id] || id;
+  // Init page
+  if (id === 'dashboard') initDashboard();
+  if (id === 'dep-targets') initDepTargetPage();
+  if (id === 'competencies') initCompPage();
+  if (id === 'position-weights') initPositionWeights();
+  if (id === 'company-targets') initCompanyTargets();
+  if (id === 'company-target-weights') initCompanyTargetWeightsPage();
+}
+
+// ============================================================
+// ===== DASHBOARD =====
+// ============================================================
+async function initDashboard() {
+  const [emps, ct, cycles] = await Promise.all([
+    api('getEmployees'),
+    api('getCompanyTargets'),
+    api('getCycles')
+  ]);
+
+  document.getElementById('dash-emp-count').textContent = emps.data?.length ?? 0;
+  document.getElementById('dash-ct-count').textContent = ct.data?.length ?? 0;
+  document.getElementById('dash-cycle-count').textContent = cycles.data?.length ?? 0;
+
+  // Company overall
+  const targets = ct.data || [];
+  const evaluated = targets.filter(t => t['Evaluation']);
+  if (evaluated.length) {
+    const overall = (evaluated.reduce((s, t) => s + Number(t['Evaluation']), 0) / (evaluated.length * 5) * 100).toFixed(1);
+    document.getElementById('dash-company-result').textContent = overall + '%';
+  } else {
+    document.getElementById('dash-company-result').textContent = '—';
+  }
+
+  // Company targets list
+  const ctList = document.getElementById('dash-company-targets-list');
+  if (!targets.length) {
+    ctList.innerHTML = '<div class="empty-state"><p>Hədəf qeyd edilməyib</p></div>';
+  } else {
+    ctList.innerHTML = targets.map(t => {
+      const pct = t['Performance %'] || 0;
+      const color = pct >= 80 ? 'green' : pct >= 60 ? '' : 'warn';
+      return `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:.84rem;font-weight:600">${t['Target Name']}</span>
+          <span style="font-size:.84rem;color:var(--text2)">${pct}%</span>
+        </div>
+        <div class="progress"><div class="progress-bar ${color}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Cycles
+  const cycleList = document.getElementById('dash-cycles-list');
+  const cycleData = (cycles.data || []).slice(-5).reverse();
+  if (!cycleData.length) {
+    cycleList.innerHTML = '<div class="empty-state"><p>Aktiv sikl yoxdur</p></div>';
+  } else {
+    cycleList.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Ad</th><th>Departament</th><th>Vəzifə Qrupu</th><th>Status</th></tr></thead>
+      <tbody>${cycleData.map(c => `<tr>
+        <td>${c['Name']}</td>
+        <td>${c['Department']}</td>
+        <td><span class="badge badge-blue">${c['Position Group']}</span></td>
+        <td><span class="badge badge-green">${c['Status']}</span></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+// ============================================================
+// ===== COMPANY TARGETS =====
+// ============================================================
+let companyTargets = [];
+
+async function initCompanyTargets() {
+  const r = await api('getCompanyTargets');
+  companyTargets = r.data || [];
+  renderCompanyTargets();
+}
+
+function renderCompanyTargets() {
+  const c = document.getElementById('company-targets-container');
+  if (!companyTargets.length) {
+    c.innerHTML = '<p style="color:var(--text3);font-size:.85rem;margin-bottom:12px">Hədəf əlavə edin</p>';
+  } else {
+    c.innerHTML = companyTargets.map((t, i) => renderTargetRow(t, i, 'ct')).join('');
+  }
+  updateCompanyOverall();
+  attachRatingListeners('ct');
+}
+
+function renderTargetRow(t, i, prefix) {
+  return `<div class="target-row" id="${prefix}-row-${i}">
+    <button class="btn btn-danger btn-sm btn-icon remove-btn" onclick="removeTarget('${prefix}', ${i})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="target-row-grid">
+      <div class="form-group"><label class="form-label">Hədəf Adı</label>
+        <input class="form-control" value="${t['Target Name']||''}" oninput="updateTargetField('${prefix}',${i},'Target Name',this.value)"></div>
+      <div class="form-group"><label class="form-label">Qiymətləndirmə (1-5)</label>
+        <div class="rating-stars" id="${prefix}-stars-${i}">
+          ${[1,2,3,4,5].map(n=>`<div class="star ${Number(t['Evaluation'])>=n?'active':''}" data-val="${n}" data-prefix="${prefix}" data-idx="${i}">⭐</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Açıqlama</label>
+      <textarea class="form-control" oninput="updateTargetField('${prefix}',${i},'Description',this.value)">${t['Description']||''}</textarea></div>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
+      <span style="font-size:.8rem;color:var(--text2)">Performans:</span>
+      <span style="font-weight:700;color:var(--accent3)">${t['Evaluation'] ? ((t['Evaluation']/5)*100).toFixed(1)+'%' : '—'}</span>
+    </div>
+  </div>`;
+}
+
+function attachRatingListeners(prefix) {
+  document.querySelectorAll(`.star[data-prefix="${prefix}"]`).forEach(star => {
+    star.addEventListener('click', function() {
+      const val = Number(this.dataset.val);
+      const idx = Number(this.dataset.idx);
+      const arr = prefix === 'ct' ? companyTargets : prefix === 'dt' ? depTargets : [];
+      if (arr[idx]) {
+        arr[idx]['Evaluation'] = val;
+        arr[idx]['Performance %'] = ((val/5)*100).toFixed(1);
+        const container = document.getElementById(`${prefix}-stars-${idx}`);
+        container.querySelectorAll('.star').forEach((s,si) => s.classList.toggle('active', si < val));
+        const row = document.getElementById(`${prefix}-row-${idx}`);
+        const perfSpan = row.querySelector('[style*="accent3"]');
+        if(perfSpan) perfSpan.textContent = ((val/5)*100).toFixed(1)+'%';
+        if(prefix === 'ct') updateCompanyOverall();
+        else updateDepOverall();
+      }
+    });
+  });
+}
+
+function updateTargetField(prefix, i, field, val) {
+  const arr = prefix === 'ct' ? companyTargets : depTargets;
+  if (arr[i]) arr[i][field] = val;
+}
+
+function addCompanyTarget() {
+  companyTargets.push({ 'Target Name': '', 'Description': '', 'Evaluation': '', 'Performance %': '' });
+  renderCompanyTargets();
+}
+
+function removeTarget(prefix, i) {
+  if (prefix === 'ct') { companyTargets.splice(i, 1); renderCompanyTargets(); }
+  else { depTargets.splice(i, 1); renderDepTargets(); }
+}
+
+function updateCompanyOverall() {
+  const evaluated = companyTargets.filter(t => t['Evaluation']);
+  const el = document.getElementById('company-overall-result');
+  if (!evaluated.length) { el.innerHTML = ''; return; }
+  const overall = (evaluated.reduce((s,t)=>s+Number(t['Evaluation']),0) / (evaluated.length*5)*100).toFixed(1);
+  el.innerHTML = `<div class="result-box">
+    <div><div class="result-label">Ümumi Şirkət Nəticəsi</div><div style="font-size:.78rem;color:var(--text3)">Bütün hədəflər üzrə</div></div>
+    <div class="result-value green">${overall}%</div>
+  </div>`;
+}
+
+async function saveCompanyTargets() {
+  const r = await apiPost('saveCompanyTargets', { targets: companyTargets });
+  if (r.success) toast('Şirkət hədəfləri yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// ===== DEP TARGETS =====
+// ============================================================
+let depTargets = [];
+
+async function initDepTargetPage() {
+  const r = await api('getDepartments');
+  const sel = document.getElementById('dep-target-dept');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Departament seçin —</option>';
+  (r.data || []).forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    if (d === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadDepTargets() {
+  const dept = document.getElementById('dep-target-dept').value;
+  const card = document.getElementById('dep-targets-card');
+  if (!dept) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const r = await api('getDepTargets', { department: dept });
+  depTargets = r.data || [];
+  renderDepTargets();
+}
+
+function renderDepTargets() {
+  const c = document.getElementById('dep-targets-container');
+  c.innerHTML = depTargets.map((t, i) => renderTargetRow(t, i, 'dt')).join('');
+  updateDepOverall();
+  attachRatingListeners('dt');
+}
+
+function addDepTarget() {
+  depTargets.push({ 'Target Name': '', 'Description': '', 'Evaluation': '', 'Performance %': '' });
+  renderDepTargets();
+}
+
+function updateDepOverall() {
+  const evaluated = depTargets.filter(t => t['Evaluation']);
+  const el = document.getElementById('dep-overall-result');
+  if (!evaluated.length) { el.innerHTML = ''; return; }
+  const overall = (evaluated.reduce((s,t)=>s+Number(t['Evaluation']),0) / (evaluated.length*5)*100).toFixed(1);
+  el.innerHTML = `<div class="result-box">
+    <div><div class="result-label">Departament Ümumi Nəticəsi</div></div>
+    <div class="result-value green">${overall}%</div>
+  </div>`;
+}
+
+async function saveDepTargets() {
+  const dept = document.getElementById('dep-target-dept').value;
+  if (!dept) { toast('Departament seçin', 'error'); return; }
+  const r = await apiPost('saveDepTargets', { department: dept, targets: depTargets });
+  if (r.success) toast('Departament hədəfləri yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// ===== COMPETENCIES =====
+// ============================================================
+let competencies = [];
+
+async function initCompPage() {
+  const r = await api('getPositionGroups');
+  const sel = document.getElementById('comp-pos-group');
+  sel.innerHTML = '<option value="">— Vəzifə qrupu seçin —</option>';
+  (r.data || []).forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g; sel.appendChild(opt);
+  });
+}
+
+async function loadCompetencies() {
+  const pg = document.getElementById('comp-pos-group').value;
+  const card = document.getElementById('comp-card');
+  if (!pg) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const r = await api('getCompetencies', { posGroup: pg });
+  competencies = r.data || [];
+  renderCompetencies();
+}
+
+function renderCompetencies() {
+  const c = document.getElementById('comp-container');
+  if (!competencies.length) {
+    c.innerHTML = '<p style="color:var(--text3);font-size:.85rem;margin-bottom:12px">Kompetensiya əlavə edin</p>';
+    return;
+  }
+  c.innerHTML = competencies.map((comp, i) => `
+    <div class="target-row" id="comp-item-${i}">
+      <button class="btn btn-danger btn-sm btn-icon remove-btn" onclick="removeComp(${i})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="target-row-grid">
+        <div class="form-group"><label class="form-label">Kompetensiya Adı</label>
+          <input class="form-control" value="${comp['Competency Name']||''}" oninput="competencies[${i}]['Competency Name']=this.value"></div>
+        <div class="form-group"><label class="form-label">Açıqlama</label>
+          <input class="form-control" value="${comp['Description']||''}" oninput="competencies[${i}]['Description']=this.value"></div>
+      </div>
+    </div>`).join('');
+}
+
+function addCompetency() {
+  competencies.push({ 'Competency Name': '', 'Description': '' });
+  renderCompetencies();
+}
+
+function removeComp(i) {
+  competencies.splice(i, 1);
+  renderCompetencies();
+}
+
+async function saveCompetencies() {
+  const pg = document.getElementById('comp-pos-group').value;
+  if (!pg) { toast('Vəzifə qrupu seçin', 'error'); return; }
+  const r = await apiPost('saveCompetencies', { posGroup: pg, competencies });
+  if (r.success) toast('Kompetensiyalar yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// ===== POSITION WEIGHTS =====
+// ============================================================
+let positionWeights = [];
+
+async function initPositionWeights() {
+  const [pwR, pgR] = await Promise.all([api('getPositionWeights'), api('getPositionGroups')]);
+  positionWeights = pwR.data || [];
+  const posGroups = pgR.data || [];
+
+  // Make sure all pos groups are represented
+  posGroups.forEach(pg => {
+    if (!positionWeights.find(w => w['Position Group'] === pg)) {
+      positionWeights.push({ 'Position Group': pg, 'Individual Target Weight (%)': 60, 'Competency Weight (%)': 40 });
+    }
+  });
+
+  const c = document.getElementById('pos-weights-container');
+  if (!positionWeights.length) {
+    c.innerHTML = '<p style="color:var(--text3)">Vəzifə qrupu tapılmadı. Əvvəlcə işçi məlumatlarını Google Sheets-ə əlavə edin.</p>';
+    return;
+  }
+  c.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Vəzifə Qrupu</th><th>Fərdi Hədəf Çəkisi (%)</th><th>Kompetensiya Çəkisi (%)</th><th>Cəm</th></tr></thead>
+    <tbody>${positionWeights.map((w,i)=>`<tr>
+      <td><strong>${w['Position Group']}</strong></td>
+      <td><input class="form-control" type="number" min="0" max="100" value="${w['Individual Target Weight (%)']}" oninput="positionWeights[${i}]['Individual Target Weight (%)']=Number(this.value);updatePWSum(${i})" id="pw-indv-${i}" style="width:100px"></td>
+      <td><input class="form-control" type="number" min="0" max="100" value="${w['Competency Weight (%)']}" oninput="positionWeights[${i}]['Competency Weight (%)']=Number(this.value);updatePWSum(${i})" id="pw-comp-${i}" style="width:100px"></td>
+      <td id="pw-sum-${i}" style="font-weight:700">${Number(w['Individual Target Weight (%)'])+Number(w['Competency Weight (%)'])}%</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function updatePWSum(i) {
+  const sum = (positionWeights[i]['Individual Target Weight (%)']||0) + (positionWeights[i]['Competency Weight (%)']||0);
+  const el = document.getElementById(`pw-sum-${i}`);
+  if (el) { el.textContent = sum + '%'; el.style.color = sum === 100 ? 'var(--accent3)' : 'var(--danger)'; }
+}
+
+async function savePositionWeights() {
+  const r = await apiPost('savePositionWeights', { weights: positionWeights.map(w=>({ posGroup: w['Position Group'], indvWeight: w['Individual Target Weight (%)'], compWeight: w['Competency Weight (%)'] })) });
+  if (r.success) toast('Çəki parametrləri yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// ===== COMPANY TARGET WEIGHTS =====
+// ============================================================
+let ctwData = [];
+
+async function initCompanyTargetWeightsPage() {
+  const r = await api('getPositionGroups');
+  const sel = document.getElementById('ctw-pos-group');
+  sel.innerHTML = '<option value="">— Vəzifə qrupu seçin —</option>';
+  (r.data || []).forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g; sel.appendChild(opt);
+  });
+}
+
+async function loadCompanyTargetWeights() {
+  const pg = document.getElementById('ctw-pos-group').value;
+  const card = document.getElementById('ctw-card');
+  if (!pg) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const [ctR, ctwR] = await Promise.all([api('getCompanyTargets'), api('getCompanyTargetWeights', { posGroup: pg })]);
+  const companyTargetsList = ctR.data || [];
+  ctwData = ctwR.data || [];
+
+  const c = document.getElementById('ctw-container');
+  if (!companyTargetsList.length) {
+    c.innerHTML = '<p style="color:var(--text3)">Əvvəlcə şirkət hədəflərini qurun.</p>';
+    return;
+  }
+  c.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Şirkət Hədəfi</th><th>Təsir Faizi (%)</th></tr></thead>
+    <tbody>${companyTargetsList.map(t => {
+      const existing = ctwData.find(w => w['Target ID'] === t['Target ID']);
+      return `<tr>
+        <td>${t['Target Name']}</td>
+        <td><input class="form-control" type="number" min="0" max="100" value="${existing ? existing['Weight (%)'] : ''}" placeholder="0" id="ctw-${t['Target ID']}" style="width:100px"></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+  // Store targets ref
+  document.getElementById('ctw-card').dataset.targets = JSON.stringify(companyTargetsList);
+}
+
+async function saveCompanyTargetWeights() {
+  const pg = document.getElementById('ctw-pos-group').value;
+  const targetsJson = document.getElementById('ctw-card').dataset.targets;
+  if (!targetsJson) return;
+  const targets = JSON.parse(targetsJson);
+  const weights = targets.map(t => ({
+    targetId: t['Target ID'],
+    targetName: t['Target Name'],
+    weight: Number(document.getElementById('ctw-' + t['Target ID'])?.value || 0)
+  }));
+  const r = await apiPost('saveCompanyTargetWeights', { posGroup: pg, weights });
+  if (r.success) toast('Çəkilər yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// ===== PERFORMANCE CYCLE =====
+// ============================================================
+let cycleEmployee = null;
+let cycleId = null;
+let cycleGoals = [];
+let cycleCompEvals = [];
+let cycleDepTargets = [];
+
+function showCycleStep(step) {
+  [0,1,2,3].forEach(i => {
+    document.getElementById(`cycle-step-${i}`).style.display = i === step ? 'block' : 'none';
+  });
+  document.querySelectorAll('#cycle-tabs .tab').forEach((t,i) => t.classList.toggle('active', i===step));
+}
+
+async function loadCycleEmployee() {
+  const badge = document.getElementById('cycle-badge-input').value.trim();
+  if (!badge) { toast('Badge daxil edin', 'error'); return; }
+  const r = await api('getEmployee', { badge });
+  if (!r.success) { toast('İşçi tapılmadı', 'error'); return; }
+  cycleEmployee = r.data;
+
+  const infoEl = document.getElementById('cycle-emp-info');
+  infoEl.innerHTML = `<div class="emp-card">
+    <div class="emp-avatar">${cycleEmployee['Name'].split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+    <div class="emp-info">
+      <h3>${cycleEmployee['Name']}</h3>
+      <p>${cycleEmployee['Position']} · ${cycleEmployee['Department']}</p>
+      <div class="emp-tags">
+        <span class="badge badge-blue">${cycleEmployee['Position Group']}</span>
+        <span class="badge badge-purple">${cycleEmployee['Division'] || ''}</span>
+        <span class="badge badge-green">Maaş: ${Number(cycleEmployee['Salary']).toLocaleString()} ₼</span>
+      </div>
+    </div>
+  </div>`;
+
+  // Load dep targets preview
+  const dtR = await api('getDepTargets', { department: cycleEmployee['Department'] });
+  cycleDepTargets = dtR.data || [];
+  const prevEl = document.getElementById('cycle-dep-targets-preview');
+  if (cycleDepTargets.length) {
+    prevEl.innerHTML = `<div class="alert alert-info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      ${cycleEmployee['Department']} departamenti üzrə ${cycleDepTargets.length} hədəf tapıldı
+    </div>`;
+  }
+
+  // Show start button
+  document.getElementById('cycle-start-btn-wrap').innerHTML = `
+    <button class="btn btn-success" onclick="startCycle()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Performans Siklini Başlat
+    </button>`;
+  document.getElementById('cycle-start-btn-wrap').style.display = 'block';
+}
+
+async function startCycle() {
+  if (!cycleEmployee) return;
+  const r = await apiPost('createCycle', {
+    badge: cycleEmployee['Badge'],
+    name: cycleEmployee['Name'],
+    department: cycleEmployee['Department'],
+    position: cycleEmployee['Position'],
+    positionGroup: cycleEmployee['Position Group']
+  });
+  if (!r.success) { toast('Sikl yaradıla bilmədi: ' + r.error, 'error'); return; }
+  cycleId = r.cycleId;
+  toast('Sikl uğurla başladıldı', 'success');
+  showCycleStep(1);
+  initGoalsStep();
+}
+
+// --- GOALS STEP ---
+function initGoalsStep() {
+  cycleGoals = [];
+  renderGoals();
+}
+
+function addGoal() {
+  cycleGoals.push({ name: '', description: '', relatedDepTarget: '', weight: 0, evaluation: 0 });
+  renderGoals();
+}
+
+function renderGoals() {
+  const c = document.getElementById('goals-container');
+  const totalWeight = cycleGoals.reduce((s,g)=>s+Number(g.weight||0),0);
+  c.innerHTML = cycleGoals.map((g,i)=>`
+    <div class="target-row">
+      <button class="btn btn-danger btn-sm btn-icon remove-btn" onclick="removeGoal(${i})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Goal Adı</label>
+          <input class="form-control" value="${g.name}" oninput="cycleGoals[${i}].name=this.value"></div>
+        <div class="form-group"><label class="form-label">Əlaqəli Dep. Hədəfi</label>
+          <select class="form-control" onchange="cycleGoals[${i}].relatedDepTarget=this.value">
+            <option value="">— Seçin —</option>
+            ${cycleDepTargets.map(t=>`<option value="${t['Target Name']}" ${g.relatedDepTarget===t['Target Name']?'selected':''}>${t['Target Name']}</option>`).join('')}
+          </select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Açıqlama</label>
+        <textarea class="form-control" oninput="cycleGoals[${i}].description=this.value">${g.description}</textarea></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Çəki (%) — Cəm: ${totalWeight}%</label>
+          <input class="form-control" type="number" min="0" max="100" value="${g.weight}" oninput="cycleGoals[${i}].weight=Number(this.value);renderGoals()"></div>
+        <div class="form-group"><label class="form-label">Qiymətləndirmə (1-5)</label>
+          <div class="rating-stars" id="goal-stars-${i}">
+            ${[1,2,3,4,5].map(n=>`<div class="star ${g.evaluation>=n?'active':''}" onclick="setGoalRating(${i},${n})">${n}</div>`).join('')}
+          </div>
+          <span style="font-size:.8rem;color:var(--text2);margin-top:4px;display:block">Nəticə: ${g.evaluation?((g.evaluation/5)*100).toFixed(1)+'%':'—'}</span>
+        </div>
+      </div>
+    </div>`).join('');
+  updateGoalsOverall();
+}
+
+function setGoalRating(i, val) {
+  cycleGoals[i].evaluation = val;
+  renderGoals();
+}
+
+function removeGoal(i) {
+  cycleGoals.splice(i, 1);
+  renderGoals();
+}
+
+function updateGoalsOverall() {
+  const totalWeight = cycleGoals.reduce((s,g)=>s+Number(g.weight||0),0);
+  const overall = cycleGoals.reduce((s,g)=>s+(g.evaluation?((g.evaluation/5)*g.weight):0),0) / 100;
+  const el = document.getElementById('goals-overall');
+  const weightColor = totalWeight > 100 ? 'var(--danger)' : totalWeight === 100 ? 'var(--accent3)' : 'var(--warn)';
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="result-box" style="flex:1;min-width:200px">
+        <div><div class="result-label">Cəm Çəki</div></div>
+        <div class="result-value" style="color:${weightColor}">${totalWeight}%</div>
+      </div>
+      <div class="result-box" style="flex:1;min-width:200px">
+        <div><div class="result-label">Goal Ümumi Nəticəsi</div></div>
+        <div class="result-value green">${(overall*100).toFixed(1)}%</div>
+      </div>
+    </div>`;
+}
+
+async function saveGoals() {
+  const totalWeight = cycleGoals.reduce((s,g)=>s+Number(g.weight||0),0);
+  if (totalWeight > 100) { toast('Çəkilərin cəmi 100%-i keçə bilməz!', 'error'); return; }
+  const r = await apiPost('saveGoals', { cycleId, badge: cycleEmployee['Badge'], goals: cycleGoals });
+  if (r.success) { toast('Goallar yadda saxlandı', 'success'); showCycleStep(2); initCompEvalStep(); }
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// --- COMP EVAL STEP ---
+async function initCompEvalStep() {
+  const r = await api('getCompetencies', { posGroup: cycleEmployee['Position Group'] });
+  const comps = r.data || [];
+  cycleCompEvals = comps.map(c => ({ id: c['ID'], name: c['Competency Name'], description: c['Description'], evaluation: 0 }));
+  renderCompEvals();
+}
+
+function renderCompEvals() {
+  const c = document.getElementById('comp-eval-container');
+  if (!cycleCompEvals.length) {
+    c.innerHTML = '<div class="alert alert-info">Bu vəzifə qrupu üçün kompetensiya tapılmadı. Əvvəlcə kompetensiyalar bölməsindən əlavə edin.</div>';
+    return;
+  }
+  c.innerHTML = cycleCompEvals.map((ev,i)=>`
+    <div class="target-row">
+      <div class="grid-2">
+        <div><strong style="font-size:.88rem">${ev.name}</strong><p style="font-size:.78rem;color:var(--text2);margin-top:3px">${ev.description}</p></div>
+        <div>
+          <label class="form-label">Qiymətləndirmə</label>
+          <div class="rating-stars">
+            ${[1,2,3,4,5].map(n=>`<div class="star ${ev.evaluation>=n?'active':''}" onclick="setCompEvalRating(${i},${n})">${n}</div>`).join('')}
+          </div>
+          <span style="font-size:.8rem;color:var(--text2);margin-top:4px;display:block">Nəticə: ${ev.evaluation?((ev.evaluation/5)*100).toFixed(1)+'%':'—'}</span>
+        </div>
+      </div>
+    </div>`).join('');
+  updateCompEvalOverall();
+}
+
+function setCompEvalRating(i, val) {
+  cycleCompEvals[i].evaluation = val;
+  renderCompEvals();
+}
+
+function updateCompEvalOverall() {
+  const evaluated = cycleCompEvals.filter(e=>e.evaluation);
+  if (!evaluated.length) { document.getElementById('comp-eval-overall').innerHTML=''; return; }
+  const overall = (evaluated.reduce((s,e)=>s+e.evaluation,0) / (cycleCompEvals.length*5)*100).toFixed(1);
+  document.getElementById('comp-eval-overall').innerHTML = `
+    <div class="result-box">
+      <div><div class="result-label">Kompetensiya Ümumi Nəticəsi</div></div>
+      <div class="result-value green">${overall}%</div>
+    </div>`;
+}
+
+async function saveCompEvals() {
+  const r = await apiPost('saveCompEvals', {
+    cycleId, badge: cycleEmployee['Badge'],
+    posGroup: cycleEmployee['Position Group'],
+    evals: cycleCompEvals
+  });
+  if (r.success) { toast('Kompetensiya dəyərləndirmələri yadda saxlandı', 'success'); showCycleStep(3); renderOverallResult(); }
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// --- OVERALL RESULT ---
+async function renderOverallResult() {
+  const pwR = await api('getPositionWeights');
+  const posWeights = pwR.data || [];
+  const pw = posWeights.find(w => w['Position Group'] === cycleEmployee['Position Group']);
+  const indvWeight = pw ? Number(pw['Individual Target Weight (%)']) / 100 : 0.6;
+  const compWeight = pw ? Number(pw['Competency Weight (%)']) / 100 : 0.4;
+
+  const goalsOverall = cycleGoals.reduce((s,g)=>s+(g.evaluation?((g.evaluation/5)*g.weight):0),0)/100;
+  const compOverall = cycleCompEvals.length
+    ? cycleCompEvals.reduce((s,e)=>s+e.evaluation,0) / (cycleCompEvals.length*5)
+    : 0;
+  const overallPerf = (goalsOverall * indvWeight + compOverall * compWeight) * 100;
+
+  const color = overallPerf >= 80 ? 'green' : overallPerf >= 60 ? '' : 'warn';
+
+  document.getElementById('overall-result-container').innerHTML = `
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="result-box">
+        <div><div class="result-label">Fərdi Hədəflər Nəticəsi</div><div style="font-size:.72rem;color:var(--text3)">Çəki: ${(indvWeight*100).toFixed(0)}%</div></div>
+        <div class="result-value">${(goalsOverall*100).toFixed(1)}%</div>
+      </div>
+      <div class="result-box">
+        <div><div class="result-label">Kompetensiyalar Nəticəsi</div><div style="font-size:.72rem;color:var(--text3)">Çəki: ${(compWeight*100).toFixed(0)}%</div></div>
+        <div class="result-value">${(compOverall*100).toFixed(1)}%</div>
+      </div>
+    </div>
+    <div class="result-box" style="border:2px solid var(--accent);background:rgba(59,130,246,.05)">
+      <div>
+        <div class="result-label" style="font-size:.9rem">Ümumi Performans Nəticəsi</div>
+        <div style="font-size:.78rem;color:var(--text2);margin-top:4px">${cycleEmployee['Name']} · ${cycleEmployee['Position Group']}</div>
+      </div>
+      <div class="result-value ${color}" style="font-size:2.5rem">${overallPerf.toFixed(1)}%</div>
+    </div>`;
+}
+
+// ============================================================
+// ===== BONUS =====
+// ============================================================
+let bonusEmployee = null;
+
+async function loadBonusEmployee() {
+  const badge = document.getElementById('bonus-badge-input').value.trim();
+  if (!badge) { toast('Badge daxil edin', 'error'); return; }
+  const empR = await api('getEmployee', { badge });
+  if (!empR.success) { toast('İşçi tapılmadı', 'error'); return; }
+  bonusEmployee = empR.data;
+
+  // Load all data
+  const [ctR, ctwR, cyclesR, pwR, compR] = await Promise.all([
+    api('getCompanyTargets'),
+    api('getCompanyTargetWeights', { posGroup: bonusEmployee['Position Group'] }),
+    api('getCycles'),
+    api('getPositionWeights'),
+    api('getCompetencies', { posGroup: bonusEmployee['Position Group'] })
+  ]);
+
+  const cycle = (cyclesR.data||[]).filter(c=>String(c['Badge'])===String(badge)).slice(-1)[0];
+  let goals = [], compEvals = [];
+  if (cycle) {
+    const [gR, ceR] = await Promise.all([
+      api('getGoals', { cycleId: cycle['Cycle ID'] }),
+      api('getCompEvals', { cycleId: cycle['Cycle ID'] })
+    ]);
+    goals = gR.data || [];
+    compEvals = ceR.data || [];
+  }
+
+  const annualSalary = Number(bonusEmployee['Salary']) * 12;
+  const isManager = bonusEmployee['Position Group'] === 'Manager';
+  const companyTargets = ctR.data || [];
+  const ctwData = ctwR.data || [];
+  const comps = compR.data || [];
+
+  // --- Company Bonus ---
+  let companyBonus = 0;
+  const companyBonusRows = companyTargets.map(t => {
+    const ctw = ctwData.find(w => w['Target ID'] === t['Target ID']);
+    const weight = ctw ? Number(ctw['Weight (%)']) / 100 : 0;
+    const eval_ = Number(t['Evaluation'] || 0);
+    const multiplier = eval_ >= 5 ? 0.25 : eval_ >= 4 ? 0.15 : eval_ >= 3 ? 0.10 : 0;
+    const bonus = annualSalary * weight * multiplier;
+    companyBonus += bonus;
+    return { name: t['Target Name'], weight: (weight*100).toFixed(1), eval: eval_, multiplier: (multiplier*100)+'%', bonus };
+  });
+
+  // --- Individual Bonus ---
+  const adjustFactor = isManager ? 0.5 : 0.75;
+  let individualBonus = 0;
+  const individualRows = goals.map(g => {
+    const origWeight = Number(g['Weight (%)'] || 0) / 100;
+    const adjWeight = origWeight * adjustFactor;
+    const eval_ = Number(g['Evaluation'] || 0);
+    const multiplier = eval_ >= 5 ? 0.25 : eval_ >= 4 ? 0.15 : eval_ >= 3 ? 0.10 : 0;
+    const bonus = annualSalary * adjWeight * multiplier;
+    individualBonus += bonus;
+    return { name: g['Goal Name'], origWeight: (origWeight*100).toFixed(1), adjWeight: (adjWeight*100).toFixed(1), eval: eval_, multiplier: (multiplier*100)+'%', bonus };
+  });
+
+  // --- Competency Bonus ---
+  const compWeightEach = isManager ? 0.10 : 0.01;
+  let competencyBonus = 0;
+  const compBonusRows = comps.map(comp => {
+    const evalRow = compEvals.find(e => e['Competency Name'] === comp['Competency Name']);
+    const eval_ = evalRow ? Number(evalRow['Evaluation'] || 0) : 0;
+    const multiplier = eval_ >= 5 ? 0.25 : eval_ >= 4 ? 0.15 : eval_ >= 3 ? 0.10 : 0;
+    const bonus = annualSalary * compWeightEach * multiplier;
+    competencyBonus += bonus;
+    return { name: comp['Competency Name'], weight: (compWeightEach*100).toFixed(0), eval: eval_, multiplier: (multiplier*100)+'%', bonus };
+  });
+
+  const totalBonus = companyBonus + individualBonus + competencyBonus;
+
+  // Render
+  const c = document.getElementById('bonus-container');
+  c.innerHTML = `
+    <div class="emp-card" style="margin-bottom:16px">
+      <div class="emp-avatar">${bonusEmployee['Name'].split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+      <div class="emp-info">
+        <h3>${bonusEmployee['Name']}</h3>
+        <p>${bonusEmployee['Position']} · ${bonusEmployee['Department']}</p>
+        <div class="emp-tags">
+          <span class="badge badge-blue">${bonusEmployee['Position Group']}</span>
+          <span class="badge badge-green">İllik Maaş: ${annualSalary.toLocaleString()} ₼</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bonus-source">
+      <div class="bonus-source-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/></svg>
+        Şirkət Hədəfləri üzrə Bonus
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hədəf</th><th>Çəki (%)</th><th>Qiymət</th><th>Multiplikator</th><th>Bonus (₼)</th></tr></thead>
+          <tbody>
+            ${companyBonusRows.map(r=>`<tr><td>${r.name}</td><td>${r.weight}%</td><td>${r.eval||'—'}</td><td>${r.multiplier}</td><td style="font-weight:700;color:var(--accent3)">${r.bonus.toFixed(2)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align:right;margin-top:10px;font-weight:700;color:var(--accent3)">Cəm: ${companyBonus.toFixed(2)} ₼</div>
+    </div>
+
+    <div class="bonus-source">
+      <div class="bonus-source-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Fərdi Hədəflər üzrə Bonus
+      </div>
+      ${!individualRows.length ? '<p style="color:var(--text3);font-size:.85rem">Sikl tapılmadı</p>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Goal</th><th>Orijinal Çəki (%)</th><th>Adjusted Çəki (%)</th><th>Qiymət</th><th>Multiplikator</th><th>Bonus (₼)</th></tr></thead>
+          <tbody>
+            ${individualRows.map(r=>`<tr><td>${r.name}</td><td>${r.origWeight}%</td><td>${r.adjWeight}%</td><td>${r.eval||'—'}</td><td>${r.multiplier}</td><td style="font-weight:700;color:var(--accent3)">${r.bonus.toFixed(2)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align:right;margin-top:10px;font-weight:700;color:var(--accent3)">Cəm: ${individualBonus.toFixed(2)} ₼</div>`}
+    </div>
+
+    <div class="bonus-source">
+      <div class="bonus-source-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Kompetensiyalar üzrə Bonus (${isManager?'10% hər biri':'1% hər biri'})
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kompetensiya</th><th>Çəki (%)</th><th>Qiymət</th><th>Multiplikator</th><th>Bonus (₼)</th></tr></thead>
+          <tbody>
+            ${compBonusRows.map(r=>`<tr><td>${r.name}</td><td>${r.weight}%</td><td>${r.eval||'—'}</td><td>${r.multiplier}</td><td style="font-weight:700;color:var(--accent3)">${r.bonus.toFixed(2)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align:right;margin-top:10px;font-weight:700;color:var(--accent3)">Cəm: ${competencyBonus.toFixed(2)} ₼</div>
+    </div>
+
+    <div class="result-box" style="border:2px solid var(--accent3);background:rgba(16,185,129,.05);margin-top:8px">
+      <div>
+        <div class="result-label" style="font-size:.95rem">Ümumi Bonus Məbləği</div>
+        <div style="font-size:.78rem;color:var(--text2);margin-top:4px">${bonusEmployee['Name']} · İllik Maaş: ${annualSalary.toLocaleString()} ₼</div>
+      </div>
+      <div class="result-value green" style="font-size:2rem">${totalBonus.toFixed(2)} ₼</div>
+    </div>
+
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn btn-success" onclick="saveBonusRecord(${companyBonus.toFixed(2)},${individualBonus.toFixed(2)},${competencyBonus.toFixed(2)},${totalBonus.toFixed(2)})">
+        Bonusu Yadda Saxla
+      </button>
+    </div>`;
+}
+
+async function saveBonusRecord(cb, ib, compb, total) {
+  const cycle = null; // Could look up cycle id here
+  const annualSalary = Number(bonusEmployee['Salary']) * 12;
+  const r = await apiPost('saveBonus', {
+    cycleId: 'BONUS_' + Date.now(),
+    badge: bonusEmployee['Badge'],
+    name: bonusEmployee['Name'],
+    annualSalary,
+    companyBonus: cb,
+    individualBonus: ib,
+    competencyBonus: compb,
+    totalBonus: total
+  });
+  if (r.success) toast('Bonus məlumatları yadda saxlandı', 'success');
+  else toast('Xəta: ' + r.error, 'error');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  checkApiStatus();
+  initDashboard();
+  setInterval(checkApiStatus, 30000);
+});
+</script>
+</body>
+</html>
